@@ -98,7 +98,7 @@ class XGBoostModel:
     
     def train_model(self, params: dict) -> xgb.XGBClassifier:
         # Build Model
-        with mlflow.start_run():
+        with mlflow.start_run() as run:
             mlflow.xgboost.autolog()
             
             if 'max_depth' in params and not isinstance(params['max_depth'], int):
@@ -124,7 +124,7 @@ class XGBoostModel:
             logloss = sklearn.metrics.log_loss(self.Y_val, Y_pred_proba)
             print('The predicted values are: ', Y_pred_proba, 'and the losses are: ', logloss)
 
-            return model
+            return run.info.run_id, model
 
 def run(file_path: str) -> xgb.XGBClassifier:
     df = read_data(file_path)
@@ -132,6 +132,6 @@ def run(file_path: str) -> xgb.XGBClassifier:
     X_train, X_val, Y_train, Y_val = train_test_split(X_encoded, Y_encoded)
     model = XGBoostModel(X_train, X_val, Y_train, Y_val)
     opt_param = model.param_tune()
-    opt_model = model.train_model(opt_param)
+    run_id, opt_model = model.train_model(opt_param)
 
-    return opt_model
+    return run_id, opt_model
